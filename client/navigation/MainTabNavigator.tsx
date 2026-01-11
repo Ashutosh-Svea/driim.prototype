@@ -3,13 +3,20 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Platform, StyleSheet } from "react-native";
-import HomeStackNavigator from "@/navigation/HomeStackNavigator";
-import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import JournalScreen from "@/screens/JournalScreen";
+import SearchScreen from "@/screens/SearchScreen";
+import InsightsScreen from "@/screens/InsightsScreen";
+import CalendarScreen from "@/screens/CalendarScreen";
+import SettingsScreen from "@/screens/SettingsScreen";
+import { HeaderTitle } from "@/components/HeaderTitle";
 
 export type MainTabParamList = {
-  HomeTab: undefined;
-  ProfileTab: undefined;
+  JournalTab: undefined;
+  SearchTab: undefined;
+  InsightsTab: undefined;
+  CalendarTab: undefined;
+  SettingsTab: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -19,8 +26,19 @@ export default function MainTabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
+      initialRouteName="JournalTab"
       screenOptions={{
+        headerTitleAlign: "center",
+        headerTransparent: true,
+        headerBlurEffect: isDark ? "dark" : "light",
+        headerTintColor: theme.text,
+        headerStyle: {
+          backgroundColor: Platform.select({
+            ios: undefined,
+            android: theme.backgroundRoot,
+            web: theme.backgroundRoot,
+          }),
+        },
         tabBarActiveTintColor: theme.tabIconSelected,
         tabBarInactiveTintColor: theme.tabIconDefault,
         tabBarStyle: {
@@ -40,26 +58,60 @@ export default function MainTabNavigator() {
               style={StyleSheet.absoluteFill}
             />
           ) : null,
-        headerShown: false,
       }}
     >
       <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
+        name="JournalTab"
+        component={JournalScreen}
         options={{
-          title: "Home",
+          title: "Journal",
+          headerTitle: () => <HeaderTitle title="Driim" showIcon />,
           tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={size} color={color} />
+            <Feather name="book-open" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStackNavigator}
+        name="SearchTab"
+        component={SearchScreen}
         options={{
-          title: "Profile",
+          title: "Search",
+          headerTitle: "Search Dreams",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <Feather name="search" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="InsightsTab"
+        component={InsightsScreen}
+        options={{
+          title: "Insights",
+          headerTitle: "Insights",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="bar-chart-2" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CalendarTab"
+        component={CalendarScreen}
+        options={{
+          title: "Calendar",
+          headerTitle: "Calendar",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="SettingsTab"
+        component={SettingsScreen}
+        options={{
+          title: "Settings",
+          headerTitle: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="settings" size={size} color={color} />
           ),
         }}
       />

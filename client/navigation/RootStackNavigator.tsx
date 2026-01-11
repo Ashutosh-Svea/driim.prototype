@@ -1,12 +1,14 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import ModalScreen from "@/screens/ModalScreen";
+import DreamDetailScreen from "@/screens/DreamDetailScreen";
+import DreamEditScreen from "@/screens/DreamEditScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type RootStackParamList = {
   Main: undefined;
-  Modal: undefined;
+  DreamDetail: { dreamId: string };
+  DreamEdit: { dreamId?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -22,11 +24,19 @@ export default function RootStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Modal"
-        component={ModalScreen}
+        name="DreamDetail"
+        component={DreamDetailScreen}
         options={{
+          headerTitle: "Dream",
+          presentation: "card",
+        }}
+      />
+      <Stack.Screen
+        name="DreamEdit"
+        component={DreamEditScreen}
+        options={{
+          headerTitle: "New Dream",
           presentation: "modal",
-          headerTitle: "Modal",
         }}
       />
     </Stack.Navigator>
