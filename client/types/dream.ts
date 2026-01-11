@@ -83,6 +83,21 @@ export interface AIReflection {
   lucidityTrainingTips: string[];
 }
 
+export type DreamSyncChangeType = "upsert" | "delete";
+
+export interface DreamSyncChange {
+  id: string;
+  type: DreamSyncChangeType;
+  updatedAt: string;
+  dream?: Dream;
+}
+
+export interface DreamSyncPayload {
+  deviceId: string;
+  lastSyncedAt?: string | null;
+  changes: DreamSyncChange[];
+}
+
 export const EMOTION_OPTIONS = [
   { id: "joy", label: "Joy", color: "#FFD93D" },
   { id: "fear", label: "Fear", color: "#8B5CF6" },
