@@ -1,30 +1,47 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
-
 export const Colors = {
   light: {
-    text: "#11181C",
+    text: "#2D2640",
+    textSecondary: "#6B6380",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    tabIconDefault: "#6B6380",
+    tabIconSelected: "#4A3B8C",
+    link: "#4A3B8C",
+    backgroundRoot: "#F5F3FF",
+    backgroundDefault: "#FFFFFF",
+    backgroundSecondary: "#EBE8F7",
+    backgroundTertiary: "#DDD8EE",
+    primary: "#4A3B8C",
+    primaryLight: "#7B68C4",
+    accent: "#FFA94D",
+    success: "#6BCF7F",
+    warning: "#FFB84D",
+    error: "#FF6B6B",
+    border: "#E0DCF0",
+    cardGradientStart: "#4A3B8C",
+    cardGradientEnd: "#7B68C4",
   },
   dark: {
-    text: "#ECEDEE",
+    text: "#F5F3FF",
+    textSecondary: "#A69FBD",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    tabIconDefault: "#A69FBD",
+    tabIconSelected: "#7B68C4",
+    link: "#7B68C4",
+    backgroundRoot: "#0F0E1A",
+    backgroundDefault: "#1A1825",
+    backgroundSecondary: "#252233",
+    backgroundTertiary: "#302D40",
+    primary: "#7B68C4",
+    primaryLight: "#9B8CD4",
+    accent: "#FFA94D",
+    success: "#6BCF7F",
+    warning: "#FFB84D",
+    error: "#FF6B6B",
+    border: "#3A3650",
+    cardGradientStart: "#4A3B8C",
+    cardGradientEnd: "#7B68C4",
   },
 };
 
@@ -45,7 +62,7 @@ export const Spacing = {
 export const BorderRadius = {
   xs: 8,
   sm: 12,
-  md: 18,
+  md: 16,
   lg: 24,
   xl: 30,
   "2xl": 40,
@@ -54,65 +71,108 @@ export const BorderRadius = {
 };
 
 export const Typography = {
+  display: {
+    fontSize: 32,
+    fontWeight: "700" as const,
+    fontFamily: "Nunito_700Bold",
+  },
+  heading: {
+    fontSize: 24,
+    fontWeight: "600" as const,
+    fontFamily: "Nunito_600SemiBold",
+  },
   h1: {
     fontSize: 32,
-    lineHeight: 40,
     fontWeight: "700" as const,
+    fontFamily: "Nunito_700Bold",
   },
   h2: {
     fontSize: 28,
-    lineHeight: 36,
     fontWeight: "700" as const,
+    fontFamily: "Nunito_700Bold",
   },
   h3: {
     fontSize: 24,
-    lineHeight: 32,
     fontWeight: "600" as const,
+    fontFamily: "Nunito_600SemiBold",
   },
   h4: {
     fontSize: 20,
-    lineHeight: 28,
     fontWeight: "600" as const,
+    fontFamily: "Nunito_600SemiBold",
   },
   body: {
     fontSize: 16,
-    lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: "Nunito_400Regular",
+  },
+  caption: {
+    fontSize: 14,
+    fontWeight: "400" as const,
+    fontFamily: "Nunito_400Regular",
+  },
+  button: {
+    fontSize: 16,
+    fontWeight: "600" as const,
+    fontFamily: "Nunito_600SemiBold",
   },
   small: {
     fontSize: 14,
-    lineHeight: 20,
     fontWeight: "400" as const,
+    fontFamily: "Nunito_400Regular",
   },
   link: {
     fontSize: 16,
-    lineHeight: 24,
     fontWeight: "400" as const,
+    fontFamily: "Nunito_400Regular",
+  },
+};
+
+export const Shadows = {
+  card: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  fab: {
+    shadowColor: "#4A3B8C",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
+    sans: "Nunito_400Regular",
+    semiBold: "Nunito_600SemiBold",
+    bold: "Nunito_700Bold",
     mono: "ui-monospace",
   },
   default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
+    sans: "Nunito_400Regular",
+    semiBold: "Nunito_600SemiBold",
+    bold: "Nunito_700Bold",
     mono: "monospace",
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    sans: "Nunito, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    semiBold: "Nunito, system-ui, sans-serif",
+    bold: "Nunito, system-ui, sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Emotions = [
+  { id: "joy", label: "Joy", color: "#FFD93D" },
+  { id: "fear", label: "Fear", color: "#8B5CF6" },
+  { id: "awe", label: "Awe", color: "#60A5FA" },
+  { id: "grief", label: "Grief", color: "#6B7280" },
+  { id: "peace", label: "Peace", color: "#34D399" },
+  { id: "desire", label: "Desire", color: "#F472B6" },
+  { id: "anger", label: "Anger", color: "#EF4444" },
+  { id: "confusion", label: "Confusion", color: "#A78BFA" },
+];
