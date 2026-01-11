@@ -15,6 +15,12 @@ import {
   DreamInsights,
   CalendarDay,
   DreamSyncChange,
+} from "@/types/dream";
+import {
+  createSyncPayload,
+  enqueueDeleteChange,
+  enqueueUpsertChange,
+} from "@/contexts/dreamSyncQueue";
   DreamSyncPayload,
 } from "@/types/dream";
 import { syncDreamChanges } from "@/services/syncService";
@@ -624,7 +630,6 @@ export function DreamProvider({ children }: { children: ReactNode }) {
         lastSyncedAt,
         changes: syncQueue,
       };
-
       const response = await syncDreamChanges(payload);
       if (response?.dreams && Array.isArray(response.dreams)) {
         await saveDreams(response.dreams);
