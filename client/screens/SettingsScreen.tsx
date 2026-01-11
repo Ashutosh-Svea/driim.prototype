@@ -109,7 +109,15 @@ function SettingsSection({
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
-  const { dreams, loadSampleData, clearAllData } = useDreams();
+  const {
+    dreams,
+    loadSampleData,
+    clearAllData,
+    syncDreams,
+    isSyncing,
+    syncPendingCount,
+    lastSyncedAt,
+  } = useDreams();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -120,6 +128,30 @@ export default function SettingsScreen() {
       window.alert(message);
     } else {
       Alert.alert(title, message);
+    }
+  };
+
+  const formatLastSynced = () => {
+    if (!lastSyncedAt) return "Never";
+    const date = new Date(lastSyncedAt);
+    if (Number.isNaN(date.getTime())) return "Never";
+    return date.toLocaleString();
+  };
+
+  const handleSync = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const result = await syncDreams();
+      const message =
+        result.synced === 0
+          ? "You're already up to date."
+          : `Synced ${result.synced} change${result.synced === 1 ? "" : "s"}.`;
+      showAlert("Sync Complete", message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error("Sync error:", error);
+      showAlert("Sync Failed", "Unable to sync right now. Please try again.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
@@ -319,6 +351,16 @@ export default function SettingsScreen() {
         </View>
 
         <SettingsSection title="DATA">
+          <SettingsRow
+            icon="refresh-cw"
+            label="Sync with server"
+            value={
+              isSyncing
+                ? "Syncing..."
+                : `${syncPendingCount} pending • Last: ${formatLastSynced()}`
+            }
+            onPress={handleSync}
+          />
           <SettingsRow
             icon="download"
             label="Export as JSON"

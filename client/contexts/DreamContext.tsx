@@ -14,14 +14,27 @@ import {
   DreamFilter,
   DreamInsights,
   CalendarDay,
+  DreamSyncChange,
 } from "@/types/dream";
+import { syncDreamChanges } from "@/services/syncService";
+import {
+  createSyncPayload,
+  enqueueDeleteChange,
+  enqueueUpsertChange,
+} from "@/contexts/dreamSyncQueue";
 
 const DREAMS_STORAGE_KEY = "@driim_dreams";
+const SYNC_QUEUE_STORAGE_KEY = "@driim_dream_sync_queue";
+const LAST_SYNC_STORAGE_KEY = "@driim_dream_last_sync";
+const DEVICE_ID_STORAGE_KEY = "@driim_device_id";
 
 interface DreamContextType {
   dreams: Dream[];
   isLoading: boolean;
   error: string | null;
+  isSyncing: boolean;
+  syncPendingCount: number;
+  lastSyncedAt: string | null;
   addDream: (input: DreamInput) => Promise<Dream>;
   updateDream: (id: string, input: DreamInput) => Promise<Dream | null>;
   deleteDream: (id: string) => Promise<boolean>;
@@ -32,6 +45,7 @@ interface DreamContextType {
   loadSampleData: () => Promise<void>;
   clearAllData: () => Promise<void>;
   refreshDreams: () => Promise<void>;
+  syncDreams: () => Promise<{ synced: number }>;
 }
 
 const DreamContext = createContext<DreamContextType | undefined>(undefined);
@@ -40,6 +54,10 @@ export function DreamProvider({ children }: { children: ReactNode }) {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncQueue, setSyncQueue] = useState<DreamSyncChange[]>([]);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
   const loadDreams = useCallback(async () => {
     try {
@@ -60,9 +78,38 @@ export function DreamProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadSyncState = useCallback(async () => {
+    try {
+      const [queueRaw, lastSyncRaw, deviceIdRaw] = await Promise.all([
+        AsyncStorage.getItem(SYNC_QUEUE_STORAGE_KEY),
+        AsyncStorage.getItem(LAST_SYNC_STORAGE_KEY),
+        AsyncStorage.getItem(DEVICE_ID_STORAGE_KEY),
+      ]);
+
+      if (queueRaw) {
+        setSyncQueue(JSON.parse(queueRaw));
+      }
+
+      if (lastSyncRaw) {
+        setLastSyncedAt(lastSyncRaw);
+      }
+
+      if (deviceIdRaw) {
+        setDeviceId(deviceIdRaw);
+      } else {
+        const newId = uuidv4();
+        setDeviceId(newId);
+        await AsyncStorage.setItem(DEVICE_ID_STORAGE_KEY, newId);
+      }
+    } catch (err) {
+      console.error("Failed to load sync state:", err);
+    }
+  }, []);
+
   useEffect(() => {
     loadDreams();
-  }, [loadDreams]);
+    loadSyncState();
+  }, [loadDreams, loadSyncState]);
 
   const saveDreams = async (newDreams: Dream[]) => {
     try {
@@ -72,6 +119,50 @@ export function DreamProvider({ children }: { children: ReactNode }) {
       throw err;
     }
   };
+
+  const saveSyncQueue = useCallback(async (queue: DreamSyncChange[]) => {
+    try {
+      await AsyncStorage.setItem(SYNC_QUEUE_STORAGE_KEY, JSON.stringify(queue));
+    } catch (err) {
+      console.error("Failed to save sync queue:", err);
+    }
+  }, []);
+
+  const updateSyncQueue = useCallback(
+    (updater: (prev: DreamSyncChange[]) => DreamSyncChange[]) => {
+      setSyncQueue((prev) => {
+        const next = updater(prev);
+        void saveSyncQueue(next);
+        return next;
+      });
+    },
+    [saveSyncQueue]
+  );
+
+  const setLastSynced = useCallback(async (timestamp: string) => {
+    setLastSyncedAt(timestamp);
+    try {
+      await AsyncStorage.setItem(LAST_SYNC_STORAGE_KEY, timestamp);
+    } catch (err) {
+      console.error("Failed to save last sync time:", err);
+    }
+  }, []);
+
+  const enqueueUpsert = useCallback(
+    (dream: Dream) => {
+      updateSyncQueue((prev) => enqueueUpsertChange(prev, dream));
+    },
+    [updateSyncQueue]
+  );
+
+  const enqueueDelete = useCallback(
+    (id: string) => {
+      updateSyncQueue((prev) =>
+        enqueueDeleteChange(prev, id, new Date().toISOString())
+      );
+    },
+    [updateSyncQueue]
+  );
 
   const addDream = async (input: DreamInput): Promise<Dream> => {
     const now = new Date().toISOString();
@@ -101,6 +192,7 @@ export function DreamProvider({ children }: { children: ReactNode }) {
     const newDreams = [newDream, ...dreams];
     await saveDreams(newDreams);
     setDreams(newDreams);
+    enqueueUpsert(newDream);
     return newDream;
   };
 
@@ -118,6 +210,7 @@ export function DreamProvider({ children }: { children: ReactNode }) {
     newDreams[index] = updatedDream;
     await saveDreams(newDreams);
     setDreams(newDreams);
+    enqueueUpsert(updatedDream);
     return updatedDream;
   };
 
@@ -127,6 +220,7 @@ export function DreamProvider({ children }: { children: ReactNode }) {
 
     await saveDreams(newDreams);
     setDreams(newDreams);
+    enqueueDelete(id);
     return true;
   };
 
@@ -488,11 +582,57 @@ export function DreamProvider({ children }: { children: ReactNode }) {
   const clearAllData = async () => {
     await AsyncStorage.removeItem(DREAMS_STORAGE_KEY);
     setDreams([]);
+    updateSyncQueue(() => []);
   };
 
   const refreshDreams = async () => {
     await loadDreams();
   };
+
+  const syncDreams = useCallback(async () => {
+    if (isSyncing) return { synced: 0 };
+
+    setIsSyncing(true);
+    try {
+      if (!deviceId) {
+        throw new Error("Device identifier not available");
+      }
+
+      if (syncQueue.length === 0) {
+        const timestamp = new Date().toISOString();
+        await setLastSynced(timestamp);
+        return { synced: 0 };
+      }
+
+      const payload = createSyncPayload(deviceId, lastSyncedAt, syncQueue);
+
+      const response = await syncDreamChanges(payload);
+      if (response?.dreams && Array.isArray(response.dreams)) {
+        await saveDreams(response.dreams);
+        setDreams(response.dreams);
+      }
+
+      updateSyncQueue(() => []);
+      const timestamp = new Date().toISOString();
+      await setLastSynced(timestamp);
+      return { synced: syncQueue.length };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Sync failed";
+      setError(message);
+      console.error("Failed to sync dreams:", err);
+      throw err;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [
+    deviceId,
+    isSyncing,
+    lastSyncedAt,
+    saveDreams,
+    setLastSynced,
+    syncQueue,
+    updateSyncQueue,
+  ]);
 
   return (
     <DreamContext.Provider
@@ -500,6 +640,9 @@ export function DreamProvider({ children }: { children: ReactNode }) {
         dreams,
         isLoading,
         error,
+        isSyncing,
+        syncPendingCount: syncQueue.length,
+        lastSyncedAt,
         addDream,
         updateDream,
         deleteDream,
@@ -510,6 +653,7 @@ export function DreamProvider({ children }: { children: ReactNode }) {
         loadSampleData,
         clearAllData,
         refreshDreams,
+        syncDreams,
       }}
     >
       {children}
