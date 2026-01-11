@@ -1,0 +1,345 @@
+Build a production-quality mobile dream journal app called “Driim” using React Native (Expo) + TypeScript. The app must be offline-first, fast, and structured cleanly.
+
+Tech stack (required)
+
+Expo (latest) + TypeScript
+
+expo-router for navigation
+
+Tamagui for UI (or if Tamagui setup is too heavy in Replit, use React Native Paper — but try Tamagui first)
+
+Local database: expo-sqlite (SQLite). Use a small data access layer/repository pattern.
+
+Local secure storage: expo-secure-store (for auth token + encryption key)
+
+Notifications: expo-notifications
+
+File export + share: expo-file-system + expo-sharing
+
+Optional biometric lock: expo-local-authentication
+
+State: simple (React context + hooks) or Zustand (either ok)
+
+Core product goals
+
+The user writes dreams quickly on their phone by the bed.
+
+App works fully offline.
+
+Powerful organization + search + insights.
+
+Optional sync to a backend API (REST) when online.
+
+Features to implement
+1) Authentication (optional but implemented)
+
+Implement a simple auth flow that can be toggled:
+
+Screens: Sign In, Sign Up, Continue Offline
+
+If user continues offline: app stores dreams locally only
+
+If user signs in: store token in SecureStore and enable sync
+
+Assume backend endpoints (do not require backend to exist; mock with a local service file):
+
+POST /auth/signup {email, password}
+
+POST /auth/login {email, password}
+
+Returns { token, userId }
+
+Keep base URL configurable in src/config.ts:
+
+API_BASE_URL = "https://api.driim.app" (placeholder)
+
+2) Dream entries (the heart)
+
+Create full CRUD for dream entries.
+
+Dream Entry fields
+
+id (uuid)
+
+title (string)
+
+content (long text)
+
+date (ISO string; default = now)
+
+sleepStart (optional)
+
+wakeTime (optional)
+
+lucidityLevel (0–5)
+
+clarityLevel (0–5)
+
+emotions (multi-select: e.g., joy, fear, awe, grief, peace, desire)
+
+tags (string array)
+
+dreamSigns (string array)
+
+people (string array)
+
+places (string array)
+
+themes (string array)
+
+rating (1–5)
+
+isNightmare (boolean)
+
+isRecurring (boolean)
+
+private (boolean)
+
+createdAt, updatedAt
+
+syncStatus (local-only: synced | pending | conflict | error)
+
+Entry UI
+
+“Quick Add” bottom button always available
+
+Editor supports:
+
+autosave drafts
+
+markdown-like formatting (basic: bold, italic, bullet lists) OR minimal rich text imitation
+
+templates: “Short”, “Detailed”, “Lucid Practice”
+
+Attachments:
+
+audio recording (voice note)
+
+images (optional)
+Store attachments locally (file paths) and link in DB.
+
+3) Offline-first architecture + sync queue
+
+All writes go to SQLite first.
+
+Build a SyncService that:
+
+queues operations: create/update/delete
+
+runs on app start + when user pulls to refresh + when network becomes available
+
+resolves conflicts by “last write wins” but mark as conflict if both changed since last sync
+
+Assume backend endpoints:
+
+GET /dreams?since=timestamp
+
+POST /dreams (create)
+
+PUT /dreams/:id
+
+DELETE /dreams/:id
+
+If backend unreachable, keep pending.
+
+4) Search (fast + advanced filters)
+
+Provide a dedicated Search screen:
+
+Full text search across title + content
+
+Filters:
+
+date range
+
+lucidity level min/max
+
+emotions
+
+tags
+
+nightmare only
+
+recurring only
+
+Sort:
+
+newest, oldest, highest lucidity, highest rating
+
+Implement with SQLite queries + simple tokenization.
+
+5) Insights & analytics dashboard
+
+Create an Insights tab with:
+
+Streak: consecutive days with at least one dream
+
+Dreams per week chart (simple bar chart)
+
+Top tags, top emotions
+
+Lucidity trend over time (simple line chart)
+
+“Dream signs” frequency list
+Use a lightweight chart library if possible (or render simple bars manually if needed).
+
+6) Calendar view
+
+Calendar screen:
+
+month view with dots for dream days
+
+tap a day to list dreams
+
+If a calendar library is too heavy, implement a simple month grid manually.
+
+7) Reminders / alarms
+
+Implement reminders using expo-notifications:
+
+Morning reminder time (user-configurable)
+
+Optional “Reality check” reminders (random times during day)
+Settings screen includes toggles + time pickers.
+
+8) Privacy & security
+
+Add:
+
+App lock (PIN or biometrics)
+
+Optional “Encrypt local DB content” (pragmatic approach):
+
+Store encryption key in SecureStore
+
+Encrypt/decrypt dream content before saving/after reading (AES via a JS crypto library if feasible; if not feasible in Expo on Replit, implement a placeholder “encryption layer” that can be swapped later, but keep the interface clean)
+
+“Hide private dreams” toggle unless unlocked
+
+9) Export & backup
+
+Implement export options:
+
+Export all dreams as JSON
+
+Export as Markdown bundle (one file per dream, zipped if possible; if zip too hard, export a single markdown file)
+
+Share/export using expo-sharing
+
+Also implement “Import JSON backup” (basic).
+
+10) AI analysis hooks (no real AI key required)
+
+Add a feature called “Reflect”:
+
+On a dream entry screen, user taps “Reflect”
+
+App calls a local function OR mock API endpoint:
+
+POST /ai/reflect { dreamId, content, tags, emotions }
+
+Response schema:
+
+summary
+
+possibleThemes
+
+questionsForReflection (5)
+
+dreamSignsDetected
+
+lucidityTrainingTips
+If API not available, fallback to local heuristic reflection (keyword-based).
+
+Screens & navigation (expo-router)
+
+Use bottom tabs:
+
+Journal (list + quick add)
+
+Search
+
+Insights
+
+Calendar
+
+Settings
+
+Entry details:
+
+DreamDetail (read view)
+
+DreamEdit (create/edit)
+
+Reflect section on detail screen
+
+UI/UX requirements
+
+Mobile-first, thumb friendly
+
+Very fast “New Dream” flow
+
+Beautiful, calm, dark-mode friendly
+
+Use consistent spacing + typography
+
+Empty states with helpful prompts
+
+Loading + error handling everywhere
+
+Code quality requirements
+
+Clean folder structure:
+
+src/db/ (schema, migrations, repositories)
+
+src/services/ (sync, auth, notifications, export, ai)
+
+src/components/
+
+src/screens/ or expo-router app/ routes
+
+src/utils/
+
+Use strict TypeScript types for models
+
+Add basic unit tests for:
+
+repository queries
+
+streak calculation
+
+tag/emotion aggregation
+(If tests are hard in Replit mobile env, include them but keep minimal.)
+
+Deliverables
+
+A runnable Expo app in Replit
+
+Seed data option in Settings (“Load sample dreams”)
+
+Clear README:
+
+how to run
+
+how to configure API base URL
+
+how sync works
+
+limitations
+
+Important: Start by scaffolding
+
+Create expo-router navigation + tabs
+
+Implement SQLite schema + repository
+
+Build Journal list + Dream create/edit
+
+Add Search + Insights + Calendar
+
+Add Notifications + Export
+
+Add Sync + Auth + Reflect hooks last
+
+Generate the full code now.
