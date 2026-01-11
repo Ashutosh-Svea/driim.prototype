@@ -16,12 +16,14 @@ import {
   CalendarDay,
   DreamSyncChange,
 } from "@/types/dream";
-import { syncDreamChanges } from "@/services/syncService";
 import {
   createSyncPayload,
   enqueueDeleteChange,
   enqueueUpsertChange,
 } from "@/contexts/dreamSyncQueue";
+  DreamSyncPayload,
+} from "@/types/dream";
+import { syncDreamChanges } from "@/services/syncService";
 
 const DREAMS_STORAGE_KEY = "@driim_dreams";
 const SYNC_QUEUE_STORAGE_KEY = "@driim_dream_sync_queue";
@@ -150,16 +152,35 @@ export function DreamProvider({ children }: { children: ReactNode }) {
 
   const enqueueUpsert = useCallback(
     (dream: Dream) => {
-      updateSyncQueue((prev) => enqueueUpsertChange(prev, dream));
+      updateSyncQueue((prev) => {
+        const filtered = prev.filter((change) => change.id !== dream.id);
+        return [
+          {
+            id: dream.id,
+            type: "upsert",
+            updatedAt: dream.updatedAt,
+            dream,
+          },
+          ...filtered,
+        ];
+      });
     },
     [updateSyncQueue]
   );
 
   const enqueueDelete = useCallback(
     (id: string) => {
-      updateSyncQueue((prev) =>
-        enqueueDeleteChange(prev, id, new Date().toISOString())
-      );
+      updateSyncQueue((prev) => {
+        const filtered = prev.filter((change) => change.id !== id);
+        return [
+          {
+            id,
+            type: "delete",
+            updatedAt: new Date().toISOString(),
+          },
+          ...filtered,
+        ];
+      });
     },
     [updateSyncQueue]
   );
@@ -604,8 +625,11 @@ export function DreamProvider({ children }: { children: ReactNode }) {
         return { synced: 0 };
       }
 
-      const payload = createSyncPayload(deviceId, lastSyncedAt, syncQueue);
-
+      const payload: DreamSyncPayload = {
+        deviceId,
+        lastSyncedAt,
+        changes: syncQueue,
+      };
       const response = await syncDreamChanges(payload);
       if (response?.dreams && Array.isArray(response.dreams)) {
         await saveDreams(response.dreams);
